@@ -46,7 +46,7 @@ pets = []
 trips = []
 
 
-def get_data_from_file(file_path='./chatbot_data.txt'):
+def get_data_from_file(file_path='chatbot_data.txt'):
     with open(file_path) as infile:
         cleaned_lines = [line.strip() for line in infile if not line.startswith(('$$$', '###', '==='))]
 
@@ -247,7 +247,7 @@ def main():
                 print('I do not know.')
 
     #Using dog template for general pet question (who has a pet?)
-    if q_trip.subject.lower() == 'who' and q_trip.object == 'cat':
+    if q_trip.subject.lower() == 'who' and q_trip.object == 'pet':
         answer = '{} has a {}.'
 
         for person in persons:
