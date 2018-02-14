@@ -11,18 +11,6 @@ re_spaces = re.compile(r'\s+')
 
 class Person(object):
     def __init__(self, name, likes=None, has=None, travels=None):
-        """
-        :param name: the person's name
-        :type name: basestring
-        :param likes: (Optional) an initial list of likes
-        :type likes: list
-        :param dislikes: (Optional) an initial list of likes
-        :type dislikes: list
-        :param has: (Optional) an initial list of things the person has
-        :type has: list
-        :param travels: (Optional) an initial list of the person's travels
-        :type travels: list
-        """
         self.name = name
         self.likes = [] if likes is None else likes
         self.has = [] if has is None else has
@@ -101,19 +89,6 @@ def get_persons_pet(person_name):
 
 
 def process_relation_triplet(triplet):
-    """
-    find relations of types:
-    (PERSON, likes, PERSON)
-    (PERSON, has, PET)
-    (PET, has_name, NAME)
-    (PERSON, travels, TRIP)
-    (TRIP, departs_on, DATE)
-    (TRIP, departs_to, PLACE)
-    :param triplet: The relation triplet from ClausIE
-    :type triplet: tuple
-    :return: a triplet in the formats specified above
-    :rtype: tuple
-    """
 
     sentence = triplet.subject + ' ' + triplet.predicate + ' ' + triplet.object
 
@@ -124,8 +99,6 @@ def process_relation_triplet(triplet):
             root = t
         # elif t.pos_ == 'NOUN'
 
-    # also, if only one sentence
-    # root = doc[:].root
 
 
     """
@@ -201,7 +174,62 @@ def has_question_word(string):
 
     return False
 
+def get_question():
+    question = ' '
+    while question[-1] != '?':
+        question = raw_input("Please enter your question: ")
+        return question
+        if question[-1] != '?':
+            print('This is not a question... please try again')
 
+def answer_questions(string):
+    sents = get_data_from_file()
+    cl = ClausIE.get_instance()
+    triples = cl.extract_triples(sents)
+    q_trip = cl.extract_triples([preprocess_question(string)])[0]
+    answers = []
+    # (WHO, has, PET)
+    # here's one just for dogs
+    if q_trip.subject.lower() == 'who' and q_trip.object == 'dog':
+        answer = '{} has a {} named {}.'
+
+        for person in persons:
+            pet = get_persons_pet(person.name)
+            if pet and pet.type == 'dog':
+                answer = (answer.format(person.name, 'dog', pet.name))
+                answers.append(answer)
+            else:
+                print('IDK')
+
+
+    if q_trip.subject.lower() == 'who' and q_trip.object == 'cat':
+        answer = '{} has a {} named {}.'
+
+        for person in persons:
+            pet = get_persons_pet(person.name)
+            if pet and pet.type == 'cat':
+                answer = (answer.format(person.name, 'cat', pet.name))
+                answers.append(answer)
+
+
+    if q_trip.subject.lower() == 'what' and q_trip.object == 'name':
+        triple = preprocess_question(string)
+        for t in triple:
+            if t.pos_ == 'PROPN':
+                person = t
+        answer = "{}'s pet is named {}."
+
+        for person in persons:
+            pet = get_persons_pet(person)
+            if pet and (pet.type == 'cat' or pet.type == 'dog'):
+                answer = (answer.format(person.name, pet.name))
+                answers.append(answer)
+
+    for answer in answers:
+        if answers != []:
+            print(answer)
+        else:
+            print('I do not know')
 
 def main():
     sents = get_data_from_file()
@@ -214,48 +242,7 @@ def main():
         r = process_relation_triplet(t)
         print(r)
 
-    question = ' '
-    while question[-1] != '?':
-        question = raw_input("Please enter your question: ")
-
-        if question[-1] != '?':
-            print('This is not a question... please try again')
-
-    q_trip = cl.extract_triples([preprocess_question(question)])[0]
-
-    # (WHO, has, PET)
-    # here's one just for dogs
-    if q_trip.subject.lower() == 'who' and q_trip.object == 'dog':
-        answer = '{} has a {} named {}.'
-
-        for person in persons:
-            pet = get_persons_pet(person.name)
-            if pet and pet.type == 'dog':
-                print(answer.format(person.name, 'dog', pet.name))
-            else:
-                print('I do not know.')
-
-    #following your example and allpying it to pet.type cat
-    if q_trip.subject.lower() == 'who' and q_trip.object == 'cat':
-        answer = '{} has a {} named {}.'
-
-        for person in persons:
-            pet = get_persons_pet(person.name)
-            if pet and pet.type == 'cat':
-                print(answer.format(person.name, 'cat', pet.name))
-            else:
-                print('I do not know.')
-
-    #Using dog template for general pet question (who has a pet?)
-    if q_trip.subject.lower() == 'who' and q_trip.object == 'pet':
-        answer = '{} has a {}.'
-
-        for person in persons:
-            pet = get_persons_pet(person.name)
-            if pet != None:
-                print(answer.format(person.name, 'pet'))
-            else:
-                print('This person does not have a pet to my knowledge.')
+    answer_questions(get_question())
 
 if __name__ == '__main__':
     main()
