@@ -198,9 +198,6 @@ def answer_questions(string):
             if pet and pet.type == 'dog':
                 answer = (answer.format(person.name, 'dog', pet.name))
                 answers.append(answer)
-            else:
-                print('IDK')
-
 
     if q_trip.subject.lower() == 'who' and q_trip.object == 'cat':
         answer = '{} has a {} named {}.'
@@ -224,6 +221,16 @@ def answer_questions(string):
             if pet and (pet.type == 'cat' or pet.type == 'dog'):
                 answer = (answer.format(person.name, pet.name))
                 answers.append(answer)
+
+    if q_trip.subject.lower() == 'who' and q_trip.object == 'PROPN':
+        person = q_trip.object
+        answer = '{} likes {}'
+
+        for people in persons:
+            for t in person.likes:
+                if t == person:
+                    answer = answer.format(people.name, person)
+                    answers.append(answer)
 
     for answer in answers:
         if answers != []:
