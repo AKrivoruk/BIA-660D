@@ -28,10 +28,22 @@ class Trip(object):
         self.departs_on = None
         self.departs_to = None
 
-
+list_of_triples = []
 persons = []
 pets = []
 trips = []
+
+def process_data_from_input_file(file_path):
+    sents = get_data_from_file(file_path)
+    cl = ClausIE.get_instance()
+    triples = cl.extract_triples(sents)
+    list_of_triples.append(triples)
+    print(list_of_triples)
+    for t in triples:
+        r = process_relation_triplet(t)
+    return list_of_triples
+
+
 
 
 def get_data_from_file(file_path='chatbot_data.txt'):
@@ -171,7 +183,7 @@ def get_question():
 
 
 
-def answer_questions(string):
+def answer_questions(string,list):
     sents = get_data_from_file()
     cl = ClausIE.get_instance()
     triples = cl.extract_triples(sents)
@@ -201,6 +213,7 @@ def answer_questions(string):
 
 
     if q_trip.subject.lower == 'does' and q_trip.predicate == 'have' and (q_trip.object == 'cat' or q_trip.object == 'dog'):
+        #Does John have a dog? will have a subject of 'Does John'
         for t in q_trip.subject:
             if t.pos_ == 'PROPN':
                 person = t
@@ -250,7 +263,8 @@ def main():
         r = process_relation_triplet(t)
         print(r)
 
-    answer_questions(get_question())
+    process_data_from_input_file(file_path='chatbot_data.txt')
+    answer_questions(get_question(),list_of_triples)
 
 if __name__ == '__main__':
     main()
