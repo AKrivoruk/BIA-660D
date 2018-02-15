@@ -97,19 +97,6 @@ def process_relation_triplet(triplet):
     for t in doc:
         if t.pos_ == 'VERB' and t.head == t:
             root = t
-        # elif t.pos_ == 'NOUN'
-
-
-
-    """
-    CURRENT ASSUMPTIONS:
-    - People's names are unique (i.e. there only exists one person with a certain name).
-    - Pet's names are unique
-    - The only pets are dogs and cats
-    - Only one person can own a specific pet
-    - A person can own only one pet
-    """
-
 
     # Process (PERSON, likes, PERSON) relations
     if root.lemma_ == 'like':
@@ -182,6 +169,8 @@ def get_question():
         if question[-1] != '?':
             print('This is not a question... please try again')
 
+
+
 def answer_questions(string):
     sents = get_data_from_file()
     cl = ClausIE.get_instance()
@@ -190,6 +179,8 @@ def answer_questions(string):
     answers = []
     # (WHO, has, PET)
     # here's one just for dogs
+    print(q_trip)
+
     if q_trip.subject.lower() == 'who' and q_trip.object == 'dog':
         answer = '{} has a {} named {}.'
 
@@ -209,20 +200,19 @@ def answer_questions(string):
                 answers.append(answer)
 
 
-    if q_trip.subject.lower() == 'what' and q_trip.object == 'name':
-        triple = preprocess_question(string)
-        for t in triple:
+    if q_trip.subject.lower == 'does' and q_trip.predicate == 'have' and (q_trip.object == 'cat' or q_trip.object == 'dog'):
+        for t in q_trip.subject:
             if t.pos_ == 'PROPN':
                 person = t
-        answer = "{}'s pet is named {}."
+        answer = "{}'s {} is named {}."
 
         for person in persons:
             pet = get_persons_pet(person)
             if pet and (pet.type == 'cat' or pet.type == 'dog'):
-                answer = (answer.format(person.name, pet.name))
+                answer = (answer.format(person.name, pet.type, pet.name))
                 answers.append(answer)
 
-    if q_trip.subject.lower() == 'who' and q_trip.object == 'PROPN':
+    if q_trip.subject.lower() == 'who'and q_trip.predicate == 'likes':
         person = q_trip.object
         answer = '{} likes {}'
 
@@ -231,6 +221,17 @@ def answer_questions(string):
                 if t == person:
                     answer = answer.format(people.name, person)
                     answers.append(answer)
+
+    if  q_trip.subject.lower() == 'does'and q_trip[1] == 'like':
+        answer = '{} likes {}'
+        for t in q_trip.subect:
+            if t.pos_ == 'PROPN':
+                for s in q_trip.subect:
+                    if s.pos_ == 'PROPN' and s != t:
+                        if t.likes == s:
+                            answer = answer.format(t,s)
+                            answers.append(answer)
+
 
     for answer in answers:
         if answers != []:
