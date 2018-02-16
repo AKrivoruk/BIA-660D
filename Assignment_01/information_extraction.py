@@ -220,25 +220,31 @@ def answer_questions(string):
 
 
     if q_trip.subject.lower() == 'who'and q_trip.predicate == 'likes':
-        person = q_trip.object
+        target = q_trip.object
         answer = '{} likes {}'
 
         for people in persons:
-            for t in person.likes:
-                if t == person:
-                    answer = answer.format(people.name, person)
-                    answers.append(answer)
+            if people.likes == target:
+                answer = answer.format(people.name, person)
+                answers.append(answer)
 
-    if  q_trip.subject.lower() == 'does'and q_trip[1] == 'like':
+    if  q_trip.subject.lower() == 'does'and q_trip.predicate == 'like':
         answer = '{} likes {}'
         for t in q_trip.subect:
             if t.pos_ == 'PERSON':
                 Sender = t
                 Receiver = q_trip.object
-                if Receiver in Sender.likes:
+                if Sender.likes == Receiver:
                         answer = answer.format(Sender,Receiver)
                         answers.append(answer)
 
+    if q_trip.subject.lower() == 'who' and (q_trip.predicate == 'going' or q_trip.predicate == 'flying' or q_trip.predicate == 'traveling' or q_trip.predicate == 'visiting'):
+        destination = q_trip.obect
+        answer = '{} is going on a trip to {}'
+        for person in persons:
+            if person.travels == destination
+                answer = (answer.format(person.name),destination)
+                answers.append(answer)
 
     for answer in answers:
         if answers != []:
