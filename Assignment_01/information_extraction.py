@@ -225,7 +225,7 @@ def answer_questions(string):
 
         for people in persons:
             if people.likes == target:
-                answer = answer.format(people.name, person)
+                answer = answer.format(people.name, target)
                 answers.append(answer)
 
     if  q_trip.subject.lower() == 'does'and q_trip.predicate == 'like':
