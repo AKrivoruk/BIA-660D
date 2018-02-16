@@ -28,23 +28,17 @@ class Trip(object):
         self.departs_on = None
         self.departs_to = None
 
-list_of_triples = []
 persons = []
 pets = []
 trips = []
 
+list_of_triples = []
 def process_data_from_input_file(file_path):
     sents = get_data_from_file(file_path)
     cl = ClausIE.get_instance()
     triples = cl.extract_triples(sents)
-    list_of_triples.append(triples)
-    print(list_of_triples)
     for t in triples:
         r = process_relation_triplet(t)
-    return list_of_triples
-
-
-
 
 def get_data_from_file(file_path='chatbot_data.txt'):
     with open(file_path) as infile:
@@ -149,6 +143,21 @@ def process_relation_triplet(triplet):
 
             s_person.has.append(pet)
 
+        if len(obj_span) == 2 and obj_span[1].pos_ == 'PROPN':
+            name = triplet.object
+            subj_start = sentence.find(triplet.subject)
+            subj_doc = doc.char_span(subj_start, subj_start + len(triplet.subject))
+
+            s_people = [token.text for token in subj_doc if token.ent_type_ == 'PERSON']
+            assert len(s_people) == 1
+            s_person = select_person(s_people[0])
+
+            s_pet_type = 'dog' if 'dog' in triplet.subject else 'cat'
+
+            pet = add_pet(s_pet_type, name)
+
+            s_person.has.append(pet)
+
 
 def preprocess_question(question):
     # remove articles: a, an, the
@@ -181,9 +190,7 @@ def get_question():
         if question[-1] != '?':
             print('This is not a question... please try again')
 
-
-
-def answer_questions(string,list):
+def answer_questions(string):
     sents = get_data_from_file()
     cl = ClausIE.get_instance()
     triples = cl.extract_triples(sents)
@@ -194,36 +201,23 @@ def answer_questions(string,list):
     print(q_trip)
 
     if q_trip.subject.lower() == 'who' and q_trip.object == 'dog':
-        answer = '{} has a {} named {}.'
+        answer = '{} has a dog.'
 
         for person in persons:
             pet = get_persons_pet(person.name)
             if pet and pet.type == 'dog':
-                answer = (answer.format(person.name, 'dog', pet.name))
+                answer = (answer.format(person.name))
                 answers.append(answer)
 
     if q_trip.subject.lower() == 'who' and q_trip.object == 'cat':
-        answer = '{} has a {} named {}.'
+        answer = '{} has a cat.'
 
         for person in persons:
             pet = get_persons_pet(person.name)
             if pet and pet.type == 'cat':
-                answer = (answer.format(person.name, 'cat', pet.name))
+                answer = (answer.format(person.name))
                 answers.append(answer)
 
-
-    if q_trip.subject.lower == 'does' and q_trip.predicate == 'have' and (q_trip.object == 'cat' or q_trip.object == 'dog'):
-        #Does John have a dog? will have a subject of 'Does John'
-        for t in q_trip.subject:
-            if t.pos_ == 'PROPN':
-                person = t
-        answer = "{}'s {} is named {}."
-
-        for person in persons:
-            pet = get_persons_pet(person)
-            if pet and (pet.type == 'cat' or pet.type == 'dog'):
-                answer = (answer.format(person.name, pet.type, pet.name))
-                answers.append(answer)
 
     if q_trip.subject.lower() == 'who'and q_trip.predicate == 'likes':
         person = q_trip.object
@@ -238,12 +232,12 @@ def answer_questions(string,list):
     if  q_trip.subject.lower() == 'does'and q_trip[1] == 'like':
         answer = '{} likes {}'
         for t in q_trip.subect:
-            if t.pos_ == 'PROPN':
-                for s in q_trip.subect:
-                    if s.pos_ == 'PROPN' and s != t:
-                        if t.likes == s:
-                            answer = answer.format(t,s)
-                            answers.append(answer)
+            if t.pos_ == 'PERSON':
+                Sender = t
+                Receiver = q_trip.object
+                if Receiver in Sender.likes:
+                        answer = answer.format(Sender,Receiver)
+                        answers.append(answer)
 
 
     for answer in answers:
@@ -261,10 +255,9 @@ def main():
 
     for t in triples:
         r = process_relation_triplet(t)
-        print(r)
 
     process_data_from_input_file(file_path='chatbot_data.txt')
-    answer_questions(get_question(),list_of_triples)
+    answer_questions(get_question())
 
 if __name__ == '__main__':
     main()
