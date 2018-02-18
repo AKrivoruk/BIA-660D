@@ -31,8 +31,6 @@ class Trip(object):
 persons = []
 pets = []
 trips = []
-
-list_of_triples = []
 def process_data_from_input_file(file_path):
     sents = get_data_from_file(file_path)
     cl = ClausIE.get_instance()
@@ -52,6 +50,32 @@ def select_person(name):
         if person.name == name:
             return person
 
+def select_place(name):
+    for place in trips:
+        if place.name == name:
+            return place
+
+def add_place(name):
+    place = select_place(name)
+
+    if place is None:
+        new_place = Trip(name)
+        trips.append(new_place)
+
+        return new_place
+
+    return place
+
+def add_departure(place):
+    trip = select_place(place)
+
+    if trip is None:
+        new_place = Trip(place)
+        trips.append(new_place)
+
+        return new_place
+
+    return place
 
 def add_person(name):
     person = select_person(name)
@@ -93,9 +117,9 @@ def get_persons_pet(person_name):
             return thing
 
 
-
 def process_relation_triplet(triplet):
 
+    global e
     sentence = triplet.subject + ' ' + triplet.predicate + ' ' + triplet.object
 
     doc = nlp(unicode(sentence))
@@ -123,7 +147,20 @@ def process_relation_triplet(triplet):
             o.likes.append(s)
 
 
-    # Process (PET, has, NAME)
+    # Process (PERSON, goes, place) relations
+    if root.lemma_ == 'go' or root.lemma_ == 'fly' or root.lemma_ == 'travel'or root.lemma_ == 'take' or root.lemma_ == 'visit':
+        if triplet.subject in [e.text for e in doc.ents if e.label_ == 'PERSON'] and triplet.object in [e.text for e in doc.ents if e.label_ == 'GPE']:
+            s = add_person(triplet.subject)
+            o = add_place(triplet.object)
+            s.travels.append(o)
+
+            if e in [e.text for e in doc.ents if e.label_ == 'DATE']:
+                dep = e
+                dep.departs_on = triplet.object
+                dep.departs_to = dep
+
+
+            # Process (PET, has, NAME)
     if triplet.subject.endswith('name') and ('dog' in triplet.subject or 'cat' in triplet.subject):
         obj_span = doc.char_span(sentence.find(triplet.object), len(sentence))
 
@@ -239,10 +276,10 @@ def answer_questions(string):
                         answers.append(answer)
 
     if q_trip.subject.lower() == 'who' and (q_trip.predicate == 'going' or q_trip.predicate == 'flying' or q_trip.predicate == 'traveling' or q_trip.predicate == 'visiting'):
-        destination = q_trip.obect
+        destination = q_trip.object
         answer = '{} is going on a trip to {}'
         for person in persons:
-            if person.travels == destination
+            if person.travels == destination:
                 answer = (answer.format(person.name),destination)
                 answers.append(answer)
 
