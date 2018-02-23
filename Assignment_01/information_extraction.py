@@ -24,9 +24,9 @@ class Pet(object):
 
 
 class Trip(object):
-    def __init__(self):
-        self.departs_on = None
-        self.departs_to = None
+    def __init__(self, location, date=None):
+        self.departs_on = location
+        self.departs_to = date
 
 persons = []
 pets = []
@@ -55,7 +55,7 @@ def select_place(name):
         if place.name == name:
             return place
 
-def add_place(name):
+def add_trip(name):
     place = select_place(name)
 
     if place is None:
@@ -107,6 +107,9 @@ def add_pet(type, name=None):
 
     return pet
 
+def return_pet_name(person):
+    pet = select_pet(person)
+    return pet.name
 
 def get_persons_pet(person_name):
 
@@ -148,17 +151,14 @@ def process_relation_triplet(triplet):
 
 
     # Process (PERSON, goes, place) relations
-    if root.lemma_ == 'go' or root.lemma_ == 'fly' or root.lemma_ == 'travel'or root.lemma_ == 'take' or root.lemma_ == 'visit':
+    if root.lemma_ == 'go' or root.lemma_ == 'fly' or root.lemma_ == 'travel' or root.lemma_ == 'take' or root.lemma_ == 'visit':
         if triplet.subject in [e.text for e in doc.ents if e.label_ == 'PERSON'] and triplet.object in [e.text for e in doc.ents if e.label_ == 'GPE']:
             s = add_person(triplet.subject)
-            o = add_place(triplet.object)
+            o = add_trip(triplet.object)
             s.travels.append(o)
 
             if e in [e.text for e in doc.ents if e.label_ == 'DATE']:
-                dep = e
-                dep.departs_on = triplet.object
-                dep.departs_to = dep
-
+                o.departs_on = triplet.object
 
             # Process (PET, has, NAME)
     if triplet.subject.endswith('name') and ('dog' in triplet.subject or 'cat' in triplet.subject):
@@ -180,19 +180,18 @@ def process_relation_triplet(triplet):
 
             s_person.has.append(pet)
 
-        if len(obj_span) == 2 and obj_span[1].pos_ == 'PROPN':
-            name = triplet.object
+        if 'Mr.' or 'Ms.' or 'Mrs.' in obj_span.noun_chunk:
+            fw_doc = nlp(unicode(triplet.object))
+            title = [t for t in fw_doc if t.text == 'Mr.' or 'Ms.' or 'Mrs.']
+            name = [t for t in fw_doc if t.pos_ == 'PROPN' and t.pos_ != 'PERSON']
             subj_start = sentence.find(triplet.subject)
             subj_doc = doc.char_span(subj_start, subj_start + len(triplet.subject))
-
             s_people = [token.text for token in subj_doc if token.ent_type_ == 'PERSON']
             assert len(s_people) == 1
             s_person = select_person(s_people[0])
-
             s_pet_type = 'dog' if 'dog' in triplet.subject else 'cat'
-
-            pet = add_pet(s_pet_type, name)
-
+            full_name = str(title) + ' ' + str(name)
+            pet = add_pet(s_pet_type, full_name)
             s_person.has.append(pet)
 
 
@@ -255,6 +254,13 @@ def answer_questions(string):
                 answer = (answer.format(person.name))
                 answers.append(answer)
 
+    if q_trip.subject.lower() == 'what' and 'name' in q_trip.object:
+        answer = '{} has a {} name {}'
+        for t in q_trip.object:
+            if t.pos_ == 'PERSON':
+                person = t.text
+                pet = get_persons_pet(person)
+                answer = answer.format(person, pet, pet.name)
 
     if q_trip.subject.lower() == 'who'and q_trip.predicate == 'likes':
         target = q_trip.object
@@ -282,6 +288,16 @@ def answer_questions(string):
             if person.travels == destination:
                 answer = (answer.format(person.name),destination)
                 answers.append(answer)
+
+    if q_trip.subject.lower() == 'when' and (q_trip.predicate == 'going' or q_trip.predicate == 'flying' or q_trip.predicate == 'traveling' or q_trip.predicate == 'visiting'):
+        answer = '{} is going on a trip in {}'
+        for t in q_trip.object:
+            if t.pos_ == 'GPE':
+                destination = q_trip.object
+            for trips in Trip:
+                if Trip.departs_to == destination:
+                    answer = answer.format(Trip.departs_on)
+
 
     for answer in answers:
         if answers != []:
