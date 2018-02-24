@@ -3,8 +3,6 @@ import re
 import spacy
 
 from pyclausie import ClausIE
-
-
 nlp = spacy.load('en')
 re_spaces = re.compile(r'\s+')
 
@@ -31,19 +29,19 @@ class Trip(object):
 persons = []
 pets = []
 trips = []
-def process_data_from_input_file(file_path):
+def process_data_from_input(file_path):
     sents = get_data_from_file(file_path)
     cl = ClausIE.get_instance()
     triples = cl.extract_triples(sents)
     for t in triples:
         r = process_relation_triplet(t)
+    print('triples processed')
 
-def get_data_from_file(file_path='chatbot_data.txt'):
+def get_data_from_file(file_path='./assignment_01.data.txt'):
     with open(file_path) as infile:
         cleaned_lines = [line.strip() for line in infile if not line.startswith(('$$$', '###', '==='))]
 
     return cleaned_lines
-
 
 def select_person(name):
     for person in persons:
@@ -158,7 +156,7 @@ def process_relation_triplet(triplet):
             s.travels.append(o)
 
             if e in [e.text for e in doc.ents if e.label_ == 'DATE']:
-                o.departs_on = triplet.object
+                o.departs_on = e
 
             # Process (PET, has, NAME)
     if triplet.subject.endswith('name') and ('dog' in triplet.subject or 'cat' in triplet.subject):
@@ -180,10 +178,9 @@ def process_relation_triplet(triplet):
 
             s_person.has.append(pet)
 
-        if 'Mr.' or 'Ms.' or 'Mrs.' in obj_span.noun_chunk:
-            fw_doc = nlp(unicode(triplet.object))
-            title = [t for t in fw_doc if t.text == 'Mr.' or 'Ms.' or 'Mrs.']
-            name = [t for t in fw_doc if t.pos_ == 'PROPN' and t.pos_ != 'PERSON']
+        if 'Mr.' or 'Ms.' or 'Mrs.' in triplet.subject:
+            title = [t for t in doc.ents if t.text == 'Mr.' or 'Ms.' or 'Mrs.']
+            name = [t for t in doc if t.pos_ == 'PROPN' and t.pos_ != 'PERSON']
             subj_start = sentence.find(triplet.subject)
             subj_doc = doc.char_span(subj_start, subj_start + len(triplet.subject))
             s_people = [token.text for token in subj_doc if token.ent_type_ == 'PERSON']
@@ -262,14 +259,15 @@ def answer_questions(string):
                 pet = get_persons_pet(person)
                 answer = answer.format(person, pet, pet.name)
 
-    if q_trip.subject.lower() == 'who'and q_trip.predicate == 'likes':
-        target = q_trip.object
+    if q_trip.subject.lower == 'who'and q_trip.predicate == 'likes':
         answer = '{} likes {}'
-
-        for people in persons:
-            if people.likes == target:
-                answer = answer.format(people.name, target)
-                answers.append(answer)
+        for i in q_trip.object:
+            if i.pos == 'PERSON':
+                target = i
+            for people in persons:
+                if people.likes == target:
+                    answer = answer.format(people.name, target)
+                    answers.append(answer)
 
     if  q_trip.subject.lower() == 'does'and q_trip.predicate == 'like':
         answer = '{} likes {}'
@@ -297,7 +295,7 @@ def answer_questions(string):
             for trips in Trip:
                 if Trip.departs_to == destination:
                     answer = answer.format(Trip.departs_on)
-
+                    answers.append(answer)
 
     for answer in answers:
         if answers != []:
@@ -305,19 +303,11 @@ def answer_questions(string):
         else:
             print('I do not know')
 
-def main():
-    sents = get_data_from_file()
+def process_data_from_input_file():
 
-    cl = ClausIE.get_instance()
-
-    triples = cl.extract_triples(sents)
-
-    for t in triples:
-        r = process_relation_triplet(t)
-
-    process_data_from_input_file(file_path='chatbot_data.txt')
+    process_data_from_input(file_path='./assignment_01.data.txt')
     answer_questions(get_question())
 
 if __name__ == '__main__':
-    main()
+    process_data_from_input_file()
 
