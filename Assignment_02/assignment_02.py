@@ -271,9 +271,9 @@ def get_full_name():
     soup = bs4.BeasutifulSoup(data_html, "html5lib")
     for x in soup.tbody.findAll('td'):
         if x.index == 1:
-        ActionChains(driver).move_to_element(x).click().perform()
-        random_delay()
-        pass
+            ActionChains(driver).move_to_element(x).click().perform()
+            random_delay()
+            pass
 
     id_of_div = "player-vitals"
     al_div = driver.find_element_by_id(id_of_div)
@@ -281,31 +281,71 @@ def get_full_name():
     soup = bs4.BeasutifulSoup(options, "html5lib")
     for span in soup.findall('h1'):
         player_name = span.text
-    return player_name
+        return player_name
+    pass
 
-def answer_question_three():
+def answer_question_four():
     scrape_all()
     random_delay()
     team = data[0][3]
     pos = data[0][4]
     name = get_full_name()
     answer = [name, team, pos]
-    np.savetxt("answer_3.csv", answer, header=None)
+    np.savetxt("answer_4.csv", answer, header=None)
     pass
 
+def type_in_name(name)
+    active_player_search_div = driver.find_element_by_id('active-player-search')
+    active_player_search_input = active_player_search_div.find_element_by_tag_name('input')
+    active_player_search_input.send_keys(name)
+    pass
+
+def answer_question_three()
+    scrape_all()
+    best_player = []
+    bp_avg = 0
+    for row in data:
+        if row.Team == 'NYY' and row.AB >= 30 and row.AVG > bp_avg:
+            best_player = row
+            pass
+        name = best_player[0]
+        type_in_name(name)
+        player_full_name = get_full_name()
+        three_a_answer = [player_full_name, row.Position]
+
+        if best_player.pos == 'LF' or best_player.pos == 'RF' or best_player.pos == 'CF':
+            three_b_anser = three_a_answer
+        else:
+            for row in data:
+                if row.Team == 'NYY' and row.AB >= 30 and row.AVG > bp_avg and (row.Pos == 'LF' or row.Pos == 'RF' or row.Pos == 'CF'):
+                    best_player = row
+                    pass
+                name = best_player[0]
+                type_in_name(name)
+                player_full_name = get_full_name()
+                three_b_answer = [player_full_name, row.Position]
+                pass
+    question_answer = [three_a_answer, three_b_anser]
+    np.savetxt("answer_3.csv", question_answer, header=None)
+    pass
+
+def answer_question_five()
+    pass
 def main():
     open_page()
     get_2015_site()
 
     answer_question_one(data)
+    answer_question_four()
 
     scrape_and_answer_question_2()
 
-    get_2017_site()
+    get_2015_site()
     answer_question_three()
+
 
     answer_question_five(data)
     scrape_all()
-    answer_question_four(data)
+
 if __name__ == '__main__':
     main()
