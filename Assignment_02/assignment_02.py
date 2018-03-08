@@ -410,6 +410,51 @@ def answer_question_five():
     np.savetxt("question_5.csv", answer, header=None)
     pass
 
+    #### Attempt at Q6###
+    import httplib, urllib, base64
+
+    headers = {
+        # Request headers
+        'Ocp-Apim-Subscription-Key': '{subscription key}',
+    }
+
+    params = urllib.urlencode({
+    })
+
+    try:
+        conn = httplib.HTTPSConnection('api.fantasydata.net')
+        conn.request("GET", "/v3/mlb/scores/{format}/Games/{season}?%s" % params, "{body}", headers)
+        response = conn.getresponse()
+        data = response.read()
+        print(data)
+        conn.close()
+    except Exception as e:
+        print("[Errno {0}] {1}".format(e.errno, e.strerror))
+
+    import http.client, urllib.request, urllib.parse, urllib.error, base64
+
+    headers = {
+        # Request headers
+        'Ocp-Apim-Subscription-Key': '{subscription key}',
+    }
+
+    params = urllib.parse.urlencode({
+    })
+
+    try:
+        conn = http.client.HTTPSConnection('api.fantasydata.net')
+        conn.request("GET", "/v3/mlb/scores/{format}/Games/{season}?%s" % params, "{body}", headers)
+        response = conn.getresponse()
+        data = response.read()
+        print(data)
+        conn.close()
+    except Exception as e:
+        print("[Errno {0}] {1}".format(e.errno, e.strerror))
+
+    ####################################
+
+
+
 def main():
     open_page()
     get_2015_site()
