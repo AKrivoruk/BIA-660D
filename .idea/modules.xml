@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/BIA-660D.iml" filepath="$PROJECT_DIR$/.idea/BIA-660D.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../BIA660D_Group_3_Project/.idea/BIA660D_Group_3_Project.iml" filepath="$PROJECT_DIR$/../BIA660D_Group_3_Project/.idea/BIA660D_Group_3_Project.iml" />
     </modules>
   </component>
 </project>
