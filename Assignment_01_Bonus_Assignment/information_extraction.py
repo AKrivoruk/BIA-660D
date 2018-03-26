@@ -22,10 +22,14 @@ class Pet(object):
 
     def __repr__(self):
         return self.type
+
 class Trip(object):
     def __init__(self, location, date=None):
         self.departs_on = location
         self.departs_to = date
+
+    def __repr__(self):
+        return self.location
 
 persons = []
 pets = []
@@ -59,6 +63,19 @@ def add_pet(type, owner, name=None):
         pet = Pet(type, pet_owner, pet)
         pets.append(pet)
     return pet
+
+def select_trip(name):
+    for place in trips:
+        if place.name == name:
+            return place
+
+def add_trip(place):
+    trip = select_trip(place)
+    if trip is None:
+        new_trip = Trip(place)
+        trips.append(new_trip)
+        return new_trip
+    return trip
 
 def get_child_with_dep(token, dep):
     for child in token.children:
@@ -168,6 +185,27 @@ def process_sentence(sentence):
         pass
     elif verb.lemma_ == 'leave':
         2+2
+        location = None
+        month = None
+        date = None
+        departure = None
+        prep = None
+        for child in verb.children:
+            if child.dep_ == 'nsubj' and child.pos_ == 'PROPN':
+                subject = child
+            elif child.dep_ == 'prep' and (child.text == 'for' or child.text == 'to'):
+                prep = child
+                location = get_child_with_dep(object, 'pobj')
+            elif child.dep_ == 'prep' and (child.text == 'on' or child.text == 'in'):
+                prep = child
+                date = get_child_with_dep(object, 'pobj')
+                month = get_child_with_dep(date, 'compound')
+                departure = month.text + ' ' + date.text
+
+        if subject and location and not departure:
+            pass
+        elif subject and location and departure:
+            pass
         pass
     else:
         raise NotImplementedError
