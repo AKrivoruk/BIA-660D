@@ -15,11 +15,13 @@ class Person(object):
 
 
 class Pet(object):
-    def __init__(self, pet_type, name=None):
-        self.name = name
+    def __init__(self, pet_type, owner, name=None):
+        self.name = name = [] if name is None else name
         self.type = pet_type
+        self.owner = owner
 
-
+    def __repr__(self):
+        return self.type
 class Trip(object):
     def __init__(self, location, date=None):
         self.departs_on = location
@@ -41,6 +43,22 @@ def add_person(name):
         persons.append(new_person)
         return new_person
     return person
+
+def select_pet(name):
+    for person in persons:
+        if person.name == name:
+            return person
+
+def add_pet(type, owner, name=None):
+    pet = None
+    if name:
+        pet = select_pet(name)
+    if owner:
+        pet_owner = select_person(owner)
+    if pet is None:
+        pet = Pet(type, pet_owner, pet)
+        pets.append(pet)
+    return pet
 
 def get_child_with_dep(token, dep):
     for child in token.children:
@@ -72,16 +90,21 @@ def process_sentence(sentence):
     verb = doc[:].root
     subject = None
     object = None
+    full_pet_name = None
+    pet_name = None
+    negative = None
 
     if verb.lemma_ == 'like':
         2+2
         for child in verb.children:
-            if child.dep_ == 'nsubj' and child.pos_ == 'PROPN':
+            if  child.dep_ == 'neg':
+                doesNT = child
+            elif child.dep_ == 'nsubj' and child.pos_ == 'PROPN':
                 subject = child
             elif child.dep_ == 'dobj' and child.pos_ == 'PROPN':
                 object = child
 
-        if (subject and object) and (not find_compounds(subject) and not find_compounds(object)):
+        if (subject and object) and (not find_compounds(subject) and not find_compounds(object)) and not negative:
             liker = add_person(subject.text)
             likee = add_person(object.text)
             liker.likes.append(likee)
@@ -108,10 +131,40 @@ def process_sentence(sentence):
             likee.likes.append(liker)
 
         elif subject.text == 'name':
-            2+2
+            pet_type = get_child_with_dep(subject, 'poss')
+            pet_name = get_child_with_dep(verb, 'attr')
+            owner_token = get_child_with_dep(pet_type, 'poss')
+            pet_owner = add_person(owner_token.text)
+            pet_owner.has.append(pet_type.text)
+            pet = add_pet(pet_type.text, pet_owner, pet_name.text)
+
         pass
     elif verb.lemma_ == 'have':
+        named = None
         2+2
+        for child in verb.children:
+            if child.dep_ == 'nsubj' and child.pos_ == 'PROPN':
+                subject = child
+            elif child.dep_ == 'dobj' and (child.text == 'dog' or child.text == 'cat'):
+                object = child
+                named = get_child_with_dep(object, 'acl')
+                if named and named.text == 'named':
+                    pet_name = get_child_with_dep(named,'oprd')
+                    if find_compounds(pet_name):
+                        prefix = get_child_with_dep(pet_name, 'compound')
+                        full_pet_name = prefix.text + ' ' + pet_name.text
+
+        pet_owner = add_person(subject.text)
+        pet_owner.has.append(object.text)
+        if (subject and object) and not full_pet_name and not pet_name:
+            pet = add_pet(object.text, pet_owner)
+
+        elif (subject and object) and not full_pet_name:
+            pet = add_pet(object.text, pet_owner, pet_name.text)
+
+        elif (subject and object) and full_pet_name:
+            pet = add_pet(object.text, pet_owner, full_pet_name)
+
         pass
     elif verb.lemma_ == 'leave':
         2+2
