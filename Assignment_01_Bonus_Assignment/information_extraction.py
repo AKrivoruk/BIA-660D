@@ -48,6 +48,22 @@ def add_person(name):
         return new_person
     return person
 
+def add_to_likes(likee_token,liker_token):
+    likee = add_person(likee_token.text)
+    liker = add_person(liker_token.text)
+    if likee.name not in liker.likes:
+        liker.likes.append(likee.name)
+
+def add_pet_to_person(pet_owner_token, pet_type_token, pet_name_string = None):
+    owner = add_person(pet_owner_token.text)
+    if pet_type_token.text not in owner.has:
+        pet = add_pet(pet_type_token.text, pet_owner_token.text, pet_name_string)
+        owner.has.append(pet_type_token.text)
+    elif pet_type_token.text in owner.has:
+        for pet in pets:
+            if pet.owner == pet_owner_token.text:
+                pet.name == pet_name_string
+
 def select_pet(name):
     for person in persons:
         if person.name == name:
@@ -114,17 +130,16 @@ def process_sentence(sentence):
     if verb.lemma_ == 'like':
         2+2
         for child in verb.children:
-            if  child.dep_ == 'neg':
-                doesNT = child
+            if child.dep_ == 'neg':
+                negative = child
             elif child.dep_ == 'nsubj' and child.pos_ == 'PROPN':
                 subject = child
             elif child.dep_ == 'dobj' and child.pos_ == 'PROPN':
                 object = child
 
         if (subject and object) and (not find_compounds(subject) and not find_compounds(object)) and not negative:
-            liker = add_person(subject.text)
-            likee = add_person(object.text)
-            liker.likes.append(likee)
+            add_to_likes(object,subject)
+
 
     elif verb.lemma_ == 'be':
         2+2
@@ -142,10 +157,8 @@ def process_sentence(sentence):
 
 
         if attr and (subject and object) and (not find_compounds(subject) and not find_compounds(object)):
-            liker = add_person(subject.text)
-            likee = add_person(object.text)
-            liker.likes.append(likee)
-            likee.likes.append(liker)
+            add_to_likes(object, subject)
+            add_to_likes(subject, object)
 
         elif subject.text == 'name':
             pet_type = get_child_with_dep(subject, 'poss')
@@ -203,9 +216,18 @@ def process_sentence(sentence):
                 departure = month.text + ' ' + date.text
 
         if subject and location and not departure:
-            pass
+            trip = add_trip(location)
+            trip.departs_to.append(location)
+            leaver = add_person(subject)
+            trips.append(trip)
+            leaver.travels.append(trip)
         elif subject and location and departure:
-            pass
+            trip = add_trip(location)
+            trip.departs_to.append(location)
+            trip.departs_on(departure)
+            leaver = add_person(subject)
+            trips.append(trip)
+            leaver.travels.append(trip)
         pass
     else:
         raise NotImplementedError
