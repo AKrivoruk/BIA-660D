@@ -80,6 +80,11 @@ def select_pet(name, owner):
         if pet.owner == owner:
             return pet
 
+def select_pet_by_name(name):
+    for pet in pets:
+        if pet.name == name:
+            return pet
+
 def add_pet(type, owner_name, name=None):
     pet = None
     pet_owner = select_person(owner_name)
@@ -110,9 +115,12 @@ def get_child_with_dep(token, dep):
         if child.dep_ == dep:
             return child
 
+def isLineEmpty(line):
+    return len(line.strip()) == 0
+
 def get_data_from_file(file_path='./assignment_01_data.txt'):
     with open(file_path) as infile:
-        cleaned_lines = [line.strip() for line in infile if not line.startswith(('$$$', '###', '==='))]
+        cleaned_lines = [line.strip() for line in infile if (not line.startswith(('$$$', '###', '===')) and not isLineEmpty(line))]
         return cleaned_lines
 
 def remove_articles(question):
@@ -158,6 +166,8 @@ def process_sentence(sentence):
     elif verb.lemma_ == 'be':
         2+2
         attr = None
+        object_two = None
+        object_three = None
         for child in verb.children:
             if child.dep_ == 'attr' and child.text == 'friends':
                 attr = child
@@ -166,11 +176,11 @@ def process_sentence(sentence):
                     object = get_child_with_dep(with_token, 'pobj')
                     if get_child_with_dep(object, 'conj'):
                         object_two = get_child_with_dep(object, 'conj')
-                        if object_two.pos != 'PROPN':
+                        if object_two.pos_ != 'PROPN':
                             object_two = None
                         if get_child_with_dep(object_two, 'conj'):
                             object_three = get_child_with_dep(object_two, 'conj')
-                            if object_three.pos != 'PROPN':
+                            if object_three.pos_ != 'PROPN':
                                 object_three = None
             elif child.dep_ == 'nsubj':
                 subject = child
@@ -185,13 +195,13 @@ def process_sentence(sentence):
             add_to_likes(object_three, subject)
             add_to_likes(subject, object_three)
 
-        if attr and (subject and object and object_two) and (not find_compounds(subject) and not find_compounds(object) and not find_compounds(object_two)):
+        elif attr and (subject and object and object_two) and (not find_compounds(subject) and not find_compounds(object) and not find_compounds(object_two)):
             add_to_likes(object, subject)
             add_to_likes(subject, object)
             add_to_likes(object_two, subject)
             add_to_likes(subject, object_two)
 
-        if attr and (subject and object) and (not find_compounds(subject) and not find_compounds(object)):
+        elif attr and (subject and object) and (not find_compounds(subject) and not find_compounds(object)):
             add_to_likes(object, subject)
             add_to_likes(subject, object)
 
@@ -271,6 +281,71 @@ def process_data_from_input_file(path):
 
 
 def answer_question(question_string):
+    doc = nlp(unicode(question_string))
+    verb = doc[:].root
+    answer = None
+    if verb.lemma_ == 'like':
+        for child in verb.children:
+            if child.dep_ == 'aux':
+                aux = child
+            elif child.dep_ == 'nsubj':
+                subject = child
+            elif child.dep_ == 'dobj' and child.pos_ == 'PROPN':
+                object = child
+
+        if subject.pos_ == 'PROPN' and object and aux:
+            liker = add_person(subject.text)
+            answer = liker.likes
+            if answer:
+                print(answer)
+
+        elif subject.text == 'Who' and subject:
+            for person in persons:
+                if person.likes == object.name:
+                    answer = person.name
+                    print(answer)
+
+        elif aux and subject.pos_ == 'PROPN' and object:
+            liker = add_person(subject.text)
+            likee = add_person(object.text)
+            for person in persons:
+                if likee.name in liker.likes:
+                    answer = 'Yes'
+                    print(answer)
+
+    elif dictionary[verb.lemma_] == 'have':
+        for child in verb.children:
+            if child.dep_ == 'dobj' and (child.text == 'dog' or child.text == 'cat'):
+                object = child
+                for pet in pets:
+                    if object.text == pet.type:
+                        answer = pet.owner
+                        print(answer)
+        pass
+    elif dictionary[verb.lemma_] == 'leave':
+        for child in verb.children:
+            if child.dep_ == 'advmod':
+                advmod = child
+            elif child.dep_ == 'nsubj':
+                subject = child
+            elif child.dep_ == 'prep' and child.text == 'to':
+                destination = get_child_with_dep(child, 'pobj')
+
+        if subject.pos_ == 'PROPN' and destination and advmod:
+            traveler = add_person(subject)
+            for trip in trips:
+                if trip.traveler == traveler.name and trip.departs_to == destination.text:
+                    answer = trip.departs_on
+                    print(answer)
+
+        if subject.text == 'Who' and destination:
+            for trip in trips:
+                if trip.departs_to == destination.text:
+                    answer = trip.traveler
+                    print(answer)
+    if not answer:
+        print('I do not know.')
+
     pass
 
 def main():
