@@ -24,9 +24,10 @@ class Pet(object):
         return self.type
 
 class Trip(object):
-    def __init__(self, location, date=None):
-        self.departs_on = location
-        self.departs_to = date
+    def __init__(self, departs_to, traveler, departs_on=None):
+        self.departs_on = departs_on
+        self.departs_to = departs_to
+        self.traveler = traveler
 
     def __repr__(self):
         return self.location
@@ -60,37 +61,48 @@ def add_pet_to_person(pet_owner_token, pet_type_token, pet_name_string = None):
         pet = add_pet(pet_type_token.text, pet_owner_token.text, pet_name_string)
         owner.has.append(pet_type_token.text)
     elif pet_type_token.text in owner.has:
-        for pet in pets:
-            if pet.owner == pet_owner_token.text:
-                pet.name == pet_name_string
+        for animal in pets:
+            if animal.owner == pet_owner_token.text:
+                animal.name = pet_name_string
 
-def select_pet(name):
-    for person in persons:
-        if person.name == name:
-            return person
+def add_trip_to_person(location_token, departure_string, person_token):
+    traveler = add_person(person_token.text)
+    if location_token.text not in traveler.travels:
+        trip = add_trip(location_token.text, person_token.text, departure_string)
+        traveler.travels.append(location_token.text)
+    elif location_token.text in traveler.travels:
+        for vacation in trips:
+            if vacation.traveler == person_token.name:
+                vacation.departs_on = departure_string
 
-def add_pet(type, owner, name=None):
+def select_pet(name, owner):
+    for pet in pets:
+        if pet.owner == owner:
+            return pet
+
+def add_pet(type, owner_name, name=None):
     pet = None
+    pet_owner = select_person(owner_name)
     if name:
-        pet = select_pet(name)
-    if owner:
-        pet_owner = select_person(owner)
+        pet = select_pet(name, owner_name)
     if pet is None:
-        pet = Pet(type, pet_owner, pet)
+        pet = Pet(type, pet_owner, name)
         pets.append(pet)
     return pet
 
-def select_trip(name):
+def select_trip(location_name, person):
     for place in trips:
-        if place.name == name:
+        if place.traveler == person:
             return place
 
-def add_trip(place):
-    trip = select_trip(place)
-    if trip is None:
-        new_trip = Trip(place)
-        trips.append(new_trip)
-        return new_trip
+def add_trip(place, traveler, date = None):
+    trip = None
+    person = add_person(traveler)
+    trip = select_trip(place, traveler)
+    if not trip:
+        person.travels.append(place)
+        trip = Trip(place,traveler,date)
+        trips.append(trip)
     return trip
 
 def get_child_with_dep(token, dep):
@@ -117,6 +129,8 @@ def find_compounds(token):
         if child.dep_ == 'compound':
             return True
     return False
+
+dictionary = {'leave':'leave', 'take':'leave', 'fly':'leave', 'go':'leave'}
 
 def process_sentence(sentence):
     doc = nlp(unicode(sentence))
@@ -150,11 +164,32 @@ def process_sentence(sentence):
                 with_token = get_child_with_dep(attr, 'prep')
                 if with_token and with_token.text == 'with':
                     object = get_child_with_dep(with_token, 'pobj')
+                    if get_child_with_dep(object, 'conj'):
+                        object_two = get_child_with_dep(object, 'conj')
+                        if object_two.pos != 'PROPN':
+                            object_two = None
+                        if get_child_with_dep(object_two, 'conj'):
+                            object_three = get_child_with_dep(object_two, 'conj')
+                            if object_three.pos != 'PROPN':
+                                object_three = None
             elif child.dep_ == 'nsubj':
                 subject = child
             elif child.dep_ == 'dobj' and child.pos_ == 'PROPN':
                 object = child
 
+        if attr and (subject and object and object_two and object_three) and (not find_compounds(subject) and not find_compounds(object) and not find_compounds(object_two) and not find_compounds(object_three)):
+            add_to_likes(object, subject)
+            add_to_likes(subject, object)
+            add_to_likes(object_two, subject)
+            add_to_likes(subject, object_two)
+            add_to_likes(object_three, subject)
+            add_to_likes(subject, object_three)
+
+        if attr and (subject and object and object_two) and (not find_compounds(subject) and not find_compounds(object) and not find_compounds(object_two)):
+            add_to_likes(object, subject)
+            add_to_likes(subject, object)
+            add_to_likes(object_two, subject)
+            add_to_likes(subject, object_two)
 
         if attr and (subject and object) and (not find_compounds(subject) and not find_compounds(object)):
             add_to_likes(object, subject)
@@ -164,11 +199,9 @@ def process_sentence(sentence):
             pet_type = get_child_with_dep(subject, 'poss')
             pet_name = get_child_with_dep(verb, 'attr')
             owner_token = get_child_with_dep(pet_type, 'poss')
-            pet_owner = add_person(owner_token.text)
-            pet_owner.has.append(pet_type.text)
-            pet = add_pet(pet_type.text, pet_owner, pet_name.text)
-
+            pet = add_pet_to_person(owner_token, pet_type, pet_name.text)
         pass
+
     elif verb.lemma_ == 'have':
         named = None
         2+2
@@ -184,51 +217,50 @@ def process_sentence(sentence):
                         prefix = get_child_with_dep(pet_name, 'compound')
                         full_pet_name = prefix.text + ' ' + pet_name.text
 
-        pet_owner = add_person(subject.text)
-        pet_owner.has.append(object.text)
         if (subject and object) and not full_pet_name and not pet_name:
-            pet = add_pet(object.text, pet_owner)
+            pet = add_pet_to_person(subject, object)
 
         elif (subject and object) and not full_pet_name:
-            pet = add_pet(object.text, pet_owner, pet_name.text)
+            pet = add_pet_to_person(subject, object, pet_name.text)
 
         elif (subject and object) and full_pet_name:
-            pet = add_pet(object.text, pet_owner, full_pet_name)
+            pet = add_pet_to_person(subject, object, full_pet_name)
 
         pass
-    elif verb.lemma_ == 'leave':
+    elif dictionary[verb.lemma_] == 'leave':
         2+2
         location = None
         month = None
         date = None
         departure = None
         prep = None
+        subject_two = None
         for child in verb.children:
-            if child.dep_ == 'nsubj' and child.pos_ == 'PROPN':
+            if (child.dep_ == 'nsubj' or child.dep_ == 'advmod') and child.pos_ == 'PROPN':
                 subject = child
-            elif child.dep_ == 'prep' and (child.text == 'for' or child.text == 'to'):
-                prep = child
-                location = get_child_with_dep(object, 'pobj')
-            elif child.dep_ == 'prep' and (child.text == 'on' or child.text == 'in'):
-                prep = child
-                date = get_child_with_dep(object, 'pobj')
+                if get_child_with_dep(subject, 'conj'):
+                    subject_two = get_child_with_dep(subject, 'conj')
+            elif child.text == 'trip':
+                to = get_child_with_dep(child, 'prep')
+                location = get_child_with_dep(to, 'pobj')
+            elif child.text == 'for' or child.text == 'to':
+                location = get_child_with_dep(child, 'pobj')
+            elif child.dep_ == 'npadvmod':
+                departure = child.text
+            elif child.text == 'on':
+                date = get_child_with_dep(child, 'pobj')
                 month = get_child_with_dep(date, 'compound')
                 departure = month.text + ' ' + date.text
 
-        if subject and location and not departure:
-            trip = add_trip(location)
-            trip.departs_to.append(location)
-            leaver = add_person(subject)
-            trips.append(trip)
-            leaver.travels.append(trip)
-        elif subject and location and departure:
-            trip = add_trip(location)
-            trip.departs_to.append(location)
-            trip.departs_on(departure)
-            leaver = add_person(subject)
-            trips.append(trip)
-            leaver.travels.append(trip)
+        if subject and not subject_two and location:
+            trip_one = add_trip_to_person(location, departure, subject)
+
+        elif subject and subject_two and location:
+            trip_one = add_trip_to_person(location, departure, subject)
+            trip_two = add_trip_to_person(location, departure, subject_two)
+
         pass
+
     else:
         raise NotImplementedError
 
