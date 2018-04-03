@@ -97,7 +97,7 @@ def add_pet(type, owner_name, name=None):
 
 def select_trip(location_name, person):
     for place in trips:
-        if place.traveler == person:
+        if place.traveler == person and place.departs_to == location_name:
             return place
 
 def add_trip(place, traveler, date = None):
@@ -425,6 +425,7 @@ def main():
     print('next question')
     answer_question('Who is going to Mexico')
     print('next question')
+    #this one doesn't work Needs to be Sally
     answer_question('Who is going to Turkey')
 
 if __name__ == '__main__':
