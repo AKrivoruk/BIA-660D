@@ -379,12 +379,16 @@ def answer_question(question_string):
     elif dictionary[verb.lemma_] == 'leave':
         destination = None
         when = None
+        subject = None
+
         for child in verb.children:
             if child.dep_ == 'advmod':
                 advmod = child
                 if advmod.text == 'When':
                     when = advmod
-            elif child.dep_ == 'nsubj' or child.dep_ == 'advmod':
+                elif advmod.pos_ == 'PROPN':
+                    subject = advmod
+            elif child.dep_ == 'nsubj':
                 subject = child
             elif child.dep_ == 'prep' and child.text == 'to':
                 destination = get_child_with_dep(child, 'pobj')
@@ -428,9 +432,8 @@ def main():
     answer_question('Who is going to Mexico?')
     print('next question')
     answer_question('Who is going to Turkey?')
-    print('next question')
     answer_question('When is Mary going to France?')
     answer_question('When is Bob going to France?')
-
+    answer_question('When is Sally going to Mexico?')
 if __name__ == '__main__':
     main()
