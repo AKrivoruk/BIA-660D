@@ -195,8 +195,12 @@ def process_sentence(sentence):
                             object_three = get_child_with_dep(object_two, 'conj')
                             if object_three.pos_ != 'PROPN':
                                 object_three = None
+
             elif child.dep_ == 'nsubj':
                 subject = child
+                if get_child_with_dep(subject, 'conj'):
+                    object = get_child_with_dep(subject, 'conj')
+
             elif child.dep_ == 'dobj' and child.pos_ == 'PROPN':
                 object = child
 
@@ -317,7 +321,15 @@ def answer_question(question_string):
             elif (child.dep_ == 'dobj' or child.dep_ == 'advmod') and child.pos_ == 'PROPN':
                 object = child
 
-        if subject.pos_ == 'PROPN' and aux:
+        if aux and aux.text == 'Does' and subject.pos_ == 'PROPN' and object.pos_ == 'PROPN':
+            liker = add_person(subject.text)
+            likee = add_person(object.text)
+            if likee.name in liker.likes:
+                    answer = 'Yes'
+                    answers.append(answer)
+                    print(answer)
+
+        elif subject.pos_ == 'PROPN' and aux:
             liker = add_person(subject.text)
             answer = liker.likes
             if answer:
@@ -332,14 +344,27 @@ def answer_question(question_string):
                     answers.append(answer)
                     print(answer)
 
-        elif aux and subject.pos_ == 'PROPN' and object:
-            liker = add_person(subject.text)
-            likee = add_person(object.text)
-            for person in persons:
-                if likee.name in liker.likes:
-                    answer = 'Yes'
-                    answers.append(answer)
+    elif verb.lemma_ == 'be':
+        pet_type_token = None
+        pet_owner_token = None
+
+        for child in verb.children:
+            if child.dep_ == 'attr' and child.text == 'What':
+                what_token = child
+            elif child.dep_ == 'nsubj' and child.text == 'name':
+                name_token = child
+                of_token = get_child_with_dep(name_token, 'prep')
+                pet_type_token = get_child_with_dep(of_token, 'pobj')
+                pet_owner_token = get_child_with_dep(pet_type_token, 'poss')
+
+        if pet_type_token and pet_owner_token:
+            for pet in pets:
+                owner = pet.owner
+                if pet.type == pet_type_token.text and owner.name == pet_owner_token.text:
+                    answer = pet.name
                     print(answer)
+                    answers.append(answer)
+        pass
 
     elif verb.lemma_ == 'have':
         for child in verb.children:
@@ -352,6 +377,7 @@ def answer_question(question_string):
                         print(answer)
 
     elif dictionary[verb.lemma_] == 'leave':
+        destination = None
         for child in verb.children:
             if child.dep_ == 'advmod':
                 advmod = child
@@ -368,7 +394,7 @@ def answer_question(question_string):
                     answers.append(answer)
                     print(answer)
 
-        if subject.text == 'Who' and destination:
+        elif subject.text == 'Who' and destination:
             for trip in trips:
                 if trip.departs_to == destination.text:
                     answer = trip.traveler
@@ -383,7 +409,23 @@ def answer_question(question_string):
 
 def main():
     process_data_from_input_file('assignment_01_data.txt')
-    answer_question('Who does Sally like?')
+    answer_question("Who has a cat?")
+    print('next question')
+    answer_question("Who has a dog?")
+    print('next question')
+    answer_question("Who has a turtle?")
+    print('next question')
+    answer_question("Who likes Sally?")
+    print('next question')
+    answer_question("Who likes Jim?")
+    print('next question')
+    answer_question("What's the name of Joe's cat?")
+    print('next question')
+    answer_question('Who is going to France')
+    print('next question')
+    answer_question('Who is going to Mexico')
+    print('next question')
+    answer_question('Who is going to Turkey')
 
 if __name__ == '__main__':
     main()
