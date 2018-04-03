@@ -16,7 +16,7 @@ class Person(object):
 
 class Pet(object):
     def __init__(self, pet_type, owner, name=None):
-        self.name = name = [] if name is None else name
+        self.name = name
         self.type = pet_type
         self.owner = owner
 
@@ -62,7 +62,8 @@ def add_pet_to_person(pet_owner_token, pet_type_token, pet_name_string = None):
         owner.has.append(pet_type_token.text)
     elif pet_type_token.text in owner.has:
         for animal in pets:
-            if animal.owner == pet_owner_token.text:
+            owner = animal.owner
+            if owner.name == pet_owner_token.text:
                 animal.name = pet_name_string
 
 def add_trip_to_person(location_token, departure_string, person_token):
