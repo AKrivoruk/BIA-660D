@@ -138,7 +138,7 @@ def find_compounds(token):
             return True
     return False
 
-dictionary = {'leave':'leave', 'take':'leave', 'fly':'leave', 'go':'leave'}
+dictionary = {'leave':'leave', 'take':'leave', 'fly':'leave', 'go':'leave', 'travel':'leave'}
 
 def process_sentence(sentence):
     doc = nlp(unicode(sentence))
@@ -303,19 +303,25 @@ def answer_question(question_string):
     doc = nlp(unicode(question_string))
     verb = doc[:].root
     answer = None
+    subject = None
+    object = None
+    advmod = None
+    aux = None
+    answers = []
     if verb.lemma_ == 'like':
         for child in verb.children:
             if child.dep_ == 'aux':
                 aux = child
             elif child.dep_ == 'nsubj':
                 subject = child
-            elif child.dep_ == 'dobj' and child.pos_ == 'PROPN':
+            elif (child.dep_ == 'dobj' or child.dep_ == 'advmod') and child.pos_ == 'PROPN':
                 object = child
 
-        if subject.pos_ == 'PROPN' and object and aux:
+        if subject.pos_ == 'PROPN' and aux:
             liker = add_person(subject.text)
             answer = liker.likes
             if answer:
+                answers.append(answer)
                 print(answer)
 
         elif subject.text == 'Who' and subject:
@@ -323,6 +329,7 @@ def answer_question(question_string):
             for person in persons:
                 if target.name in person.likes:
                     answer = person.name
+                    answers.append(answer)
                     print(answer)
 
         elif aux and subject.pos_ == 'PROPN' and object:
@@ -331,6 +338,7 @@ def answer_question(question_string):
             for person in persons:
                 if likee.name in liker.likes:
                     answer = 'Yes'
+                    answers.append(answer)
                     print(answer)
 
     elif verb.lemma_ == 'have':
@@ -340,6 +348,7 @@ def answer_question(question_string):
                 for pet in pets:
                     if object.text == pet.type:
                         answer = pet.owner
+                        answers.append(answer)
                         print(answer)
 
     elif dictionary[verb.lemma_] == 'leave':
@@ -356,22 +365,25 @@ def answer_question(question_string):
             for trip in trips:
                 if trip.traveler == traveler.name and trip.departs_to == destination.text:
                     answer = trip.departs_on
+                    answers.append(answer)
                     print(answer)
 
         if subject.text == 'Who' and destination:
             for trip in trips:
                 if trip.departs_to == destination.text:
                     answer = trip.traveler
+                    answers.append(answer)
                     print(answer)
 
     if not answer:
         print('I do not know.')
-
+    else:
+        return answers[:]
     pass
 
 def main():
     process_data_from_input_file('assignment_01_data.txt')
-    answer_question('Who likes Mary?')
+    answer_question('Who likes Sally')
 
 if __name__ == '__main__':
     main()
