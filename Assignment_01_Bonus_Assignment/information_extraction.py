@@ -156,7 +156,7 @@ def process_sentence(sentence):
                 negative = child
             elif (child.dep_ == 'nsubj' or child.dep_ == 'advmod') and child.pos_ == 'PROPN':
                 subject = child
-            elif child.dep_ == 'dobj' and child.pos_ == 'PROPN':
+            elif (child.dep_ == 'dobj' or child.dep_ == 'advmod') and child.pos_ == 'PROPN':
                 object = child
         if subject and object:
             for pet in pets:
@@ -383,7 +383,7 @@ def answer_question(question_string):
 
 def main():
     process_data_from_input_file('assignment_01_data.txt')
-    answer_question('Who likes Sally')
+    answer_question('Who does Sally like?')
 
 if __name__ == '__main__':
     main()
