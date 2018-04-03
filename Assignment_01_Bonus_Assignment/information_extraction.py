@@ -69,7 +69,6 @@ def add_trip_to_person(location_token, departure_string, person_token):
     traveler = add_person(person_token.text)
     if location_token.text not in traveler.travels:
         trip = add_trip(location_token.text, person_token.text, departure_string)
-        traveler.travels.append(location_token.text)
     elif location_token.text in traveler.travels:
         for vacation in trips:
             if vacation.traveler == person_token.name:
@@ -169,7 +168,18 @@ def process_sentence(sentence):
         object_two = None
         object_three = None
         for child in verb.children:
-            if child.dep_ == 'attr' and child.text == 'friends':
+
+            if child.dep_ == 'nsubj' and child.text == 'name':
+                pet_type = get_child_with_dep(child, 'poss')
+                pet_owner = get_child_with_dep(pet_type, 'poss')
+
+            elif child.dep_ == 'attr' and child.pos_ == 'PROPN':
+                pet_name = child
+                if find_compounds(pet_name):
+                    prefix = get_child_with_dep(pet_name, 'compound')
+                    full_pet_name = prefix.text + ' ' + pet_name.text
+
+            elif child.dep_ == 'attr' and child.text == 'friends':
                 attr = child
                 with_token = get_child_with_dep(attr, 'prep')
                 if with_token and with_token.text == 'with':
@@ -205,11 +215,11 @@ def process_sentence(sentence):
             add_to_likes(object, subject)
             add_to_likes(subject, object)
 
-        elif subject.text == 'name':
-            pet_type = get_child_with_dep(subject, 'poss')
-            pet_name = get_child_with_dep(verb, 'attr')
-            owner_token = get_child_with_dep(pet_type, 'poss')
-            pet = add_pet_to_person(owner_token, pet_type, pet_name.text)
+        elif full_pet_name and pet_type and pet_owner:
+            pet = add_pet_to_person(pet_owner, pet_type, full_pet_name)
+
+        elif pet_name and pet_type and pet_owner:
+            pet = add_pet_to_person(pet_owner, pet_type, pet_name.text)
         pass
 
     elif verb.lemma_ == 'have':
@@ -218,6 +228,7 @@ def process_sentence(sentence):
         for child in verb.children:
             if child.dep_ == 'nsubj' and child.pos_ == 'PROPN':
                 subject = child
+
             elif child.dep_ == 'dobj' and (child.text == 'dog' or child.text == 'cat'):
                 object = child
                 named = get_child_with_dep(object, 'acl')
@@ -237,7 +248,7 @@ def process_sentence(sentence):
             pet = add_pet_to_person(subject, object, full_pet_name)
 
         pass
-    elif dictionary[verb.lemma_] == 'leave':
+    elif dictionary.get(verb.lemma_):
         2+2
         location = None
         month = None
@@ -272,13 +283,12 @@ def process_sentence(sentence):
         pass
 
     else:
-        raise NotImplementedError
+        pass
 
 def process_data_from_input_file(path):
     data = get_data_from_file(path)
     for sent in data:
         process_sentence(sent)
-
 
 def answer_question(question_string):
     doc = nlp(unicode(question_string))
@@ -300,6 +310,7 @@ def answer_question(question_string):
                 print(answer)
 
         elif subject.text == 'Who' and subject:
+            person = add_person(object.text)
             for person in persons:
                 if person.likes == object.name:
                     answer = person.name
@@ -313,7 +324,7 @@ def answer_question(question_string):
                     answer = 'Yes'
                     print(answer)
 
-    elif dictionary[verb.lemma_] == 'have':
+    elif verb.lemma_ == 'have':
         for child in verb.children:
             if child.dep_ == 'dobj' and (child.text == 'dog' or child.text == 'cat'):
                 object = child
@@ -321,7 +332,7 @@ def answer_question(question_string):
                     if object.text == pet.type:
                         answer = pet.owner
                         print(answer)
-        pass
+
     elif dictionary[verb.lemma_] == 'leave':
         for child in verb.children:
             if child.dep_ == 'advmod':
@@ -343,6 +354,7 @@ def answer_question(question_string):
                 if trip.departs_to == destination.text:
                     answer = trip.traveler
                     print(answer)
+
     if not answer:
         print('I do not know.')
 
