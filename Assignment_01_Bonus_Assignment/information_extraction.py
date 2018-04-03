@@ -154,13 +154,15 @@ def process_sentence(sentence):
         for child in verb.children:
             if child.dep_ == 'neg':
                 negative = child
-            elif child.dep_ == 'nsubj' and child.pos_ == 'PROPN':
+            elif (child.dep_ == 'nsubj' or child.dep_ == 'advmod') and child.pos_ == 'PROPN':
                 subject = child
             elif child.dep_ == 'dobj' and child.pos_ == 'PROPN':
                 object = child
-
-        if (subject and object) and (not find_compounds(subject) and not find_compounds(object)) and not negative:
-            add_to_likes(object,subject)
+        if subject and object:
+            for pet in pets:
+                if pet.name != subject.text and pet.name != object.text:
+                    if (not find_compounds(subject) and not find_compounds(object)) and not negative:
+                        add_to_likes(object,subject)
 
 
     elif verb.lemma_ == 'be':
@@ -213,8 +215,12 @@ def process_sentence(sentence):
             add_to_likes(subject, object_two)
 
         elif attr and (subject and object) and (not find_compounds(subject) and not find_compounds(object)):
-            add_to_likes(object, subject)
-            add_to_likes(subject, object)
+            for pet in pets:
+                if pet.name == subject.text or pet.name == object.text:
+                    break
+                else:
+                    add_to_likes(object, subject)
+                    add_to_likes(subject, object)
 
         elif full_pet_name and pet_type and pet_owner:
             pet = add_pet_to_person(pet_owner, pet_type, full_pet_name)
@@ -269,6 +275,8 @@ def process_sentence(sentence):
                 location = get_child_with_dep(child, 'pobj')
             elif child.dep_ == 'npadvmod':
                 departure = child.text
+            elif child.dep_ == 'prep' and child.text == 'in':
+                departure = get_child_with_dep(child, 'pobj')
             elif child.text == 'on':
                 date = get_child_with_dep(child, 'pobj')
                 month = get_child_with_dep(date, 'compound')
@@ -311,9 +319,9 @@ def answer_question(question_string):
                 print(answer)
 
         elif subject.text == 'Who' and subject:
-            person = add_person(object.text)
+            target = add_person(object.text)
             for person in persons:
-                if person.likes == object.name:
+                if target.name in person.likes:
                     answer = person.name
                     print(answer)
 
