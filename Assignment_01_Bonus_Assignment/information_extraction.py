@@ -378,18 +378,20 @@ def answer_question(question_string):
 
     elif dictionary[verb.lemma_] == 'leave':
         destination = None
+        when = None
         for child in verb.children:
             if child.dep_ == 'advmod':
                 advmod = child
-            elif child.dep_ == 'nsubj':
+                if advmod.text == 'When':
+                    when = advmod
+            elif child.dep_ == 'nsubj' or child.dep_ == 'advmod':
                 subject = child
             elif child.dep_ == 'prep' and child.text == 'to':
                 destination = get_child_with_dep(child, 'pobj')
 
-        if subject.pos_ == 'PROPN' and destination and advmod:
-            traveler = add_person(subject)
+        if when and destination and subject:
             for trip in trips:
-                if trip.traveler == traveler.name and trip.departs_to == destination.text:
+                if trip.traveler == subject.text and trip.departs_to == destination.text:
                     answer = trip.departs_on
                     answers.append(answer)
                     print(answer)
@@ -421,12 +423,14 @@ def main():
     print('next question')
     answer_question("What's the name of Joe's cat?")
     print('next question')
-    answer_question('Who is going to France')
+    answer_question('Who is going to France?')
     print('next question')
-    answer_question('Who is going to Mexico')
+    answer_question('Who is going to Mexico?')
     print('next question')
-    #this one doesn't work Needs to be Sally
-    answer_question('Who is going to Turkey')
+    answer_question('Who is going to Turkey?')
+    print('next question')
+    answer_question('When is Mary going to France?')
+    answer_question('When is Bob going to France?')
 
 if __name__ == '__main__':
     main()
