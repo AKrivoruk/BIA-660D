@@ -380,7 +380,7 @@ def answer_question(question_string):
                         answers.append(answer)
                         print(answer)
 
-    elif dictionary[verb.lemma_] == 'leave':
+    elif dictionary.get(verb.lemma_):
         destination = None
         when = None
         subject = None
@@ -445,7 +445,7 @@ def main():
     print('next question')
     answer_question('Does Mary like Sally?')
     answer_question('Does Sally like Mary?')
-
+    answer_question('Does Sally like Jim?')
 
 if __name__ == '__main__':
     main()
