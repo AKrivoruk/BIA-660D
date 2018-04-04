@@ -13,7 +13,6 @@ class Person(object):
     def __repr__(self):
         return self.name
 
-
 class Pet(object):
     def __init__(self, pet_type, owner, name=None):
         self.name = name
@@ -316,10 +315,15 @@ def answer_question(question_string):
         for child in verb.children:
             if child.dep_ == 'aux':
                 aux = child
-            elif child.dep_ == 'nsubj':
-                subject = child
+            elif object and child.dep_ == 'dobj':
+                subject = object
+                object = child
             elif (child.dep_ == 'dobj' or child.dep_ == 'advmod') and child.pos_ == 'PROPN':
                 object = child
+            elif child.dep_ == 'nsubj':
+                subject = child
+
+
 
         if aux and aux.text == 'Does' and subject.pos_ == 'PROPN' and object.pos_ == 'PROPN':
             liker = add_person(subject.text)
@@ -432,8 +436,17 @@ def main():
     answer_question('Who is going to Mexico?')
     print('next question')
     answer_question('Who is going to Turkey?')
+    print('next question')
     answer_question('When is Mary going to France?')
     answer_question('When is Bob going to France?')
     answer_question('When is Sally going to Mexico?')
+    answer_question('When is Sally going to France?')
+    answer_question('When is Jim going to France?')
+    print('next question')
+    answer_question('Does Mary like Sally?')
+    answer_question('Does Sally like Mary?')
+    #this case cannot be handled yet
+
+
 if __name__ == '__main__':
     main()
