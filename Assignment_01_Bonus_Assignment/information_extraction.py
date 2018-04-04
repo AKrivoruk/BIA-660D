@@ -445,7 +445,6 @@ def main():
     print('next question')
     answer_question('Does Mary like Sally?')
     answer_question('Does Sally like Mary?')
-    #this case cannot be handled yet
 
 
 if __name__ == '__main__':
